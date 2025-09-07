@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, EmailStr
 
 
 class CreateUserRequest(BaseModel):
@@ -11,3 +11,8 @@ class CreateUserRequest(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str
+
+class UserResponse(BaseModel):
+    message: str
+    username: str
+    email: EmailStr
