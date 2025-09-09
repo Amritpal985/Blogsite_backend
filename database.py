@@ -2,9 +2,12 @@ from sqlalchemy.orm import sessionmaker, declarative_base
 from sqlalchemy import create_engine
 import urllib.parse
 import os 
+from dotenv import load_dotenv
+
+load_dotenv()
 
 DATABASE_PASSWORD = os.getenv("DATABASE_PASSWORD")
-encoded_password = urllib.parse.quote_plus(DATABASE_PASSWORD)
+encoded_password = urllib.parse.quote_plus(str(DATABASE_PASSWORD))
 
 
 POSTGRES_DATABASE_URL = (

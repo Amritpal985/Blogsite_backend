@@ -8,6 +8,9 @@ from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from datetime import timedelta, datetime, timezone
 from jose import jwt, JWTError
 import os 
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 SECRET_KEY = os.getenv("SECRET_KEY")
@@ -48,7 +51,7 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_bearer)]):
         username: str = payload.get("sub")
         user_id: int = payload.get("id")
         role: str = payload.get("role")
-        print(payload)
+        # print(payload)
         if username is None or user_id is None:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,detail="Could not validate credentials")
         return {"username": username, "id": user_id, "role": role}
