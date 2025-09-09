@@ -7,9 +7,10 @@ from passlib.context import CryptContext
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from datetime import timedelta, datetime, timezone
 from jose import jwt, JWTError
+import os 
 
 
-SECRET_KEY = '453878b316da85b9f90a9395138d5da95e628df8c6af9fbcad7f861fa61b5d2c'
+SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = 'HS256'
 
 bcrypt_context = CryptContext(schemes=["bcrypt"], deprecated="auto")

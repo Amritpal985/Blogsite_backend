@@ -1,8 +1,10 @@
 from sqlalchemy.orm import sessionmaker, declarative_base
 from sqlalchemy import create_engine
 import urllib.parse
+import os 
 
-encoded_password = urllib.parse.quote_plus("Mango8082#@")
+DATABASE_PASSWORD = os.getenv("DATABASE_PASSWORD")
+encoded_password = urllib.parse.quote_plus(DATABASE_PASSWORD)
 
 
 POSTGRES_DATABASE_URL = (
