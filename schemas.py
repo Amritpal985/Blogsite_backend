@@ -1,4 +1,6 @@
 from pydantic import BaseModel, Field, EmailStr
+from typing import Optional
+from fastapi import Form
 
 
 class CreateUserRequest(BaseModel):
@@ -16,3 +18,15 @@ class UserResponse(BaseModel):
     message: str
     username: str
     email: EmailStr
+
+class PostBase(BaseModel):
+    title: str
+    content: str
+
+    @classmethod
+    def as_form(
+        cls,
+        title: str = Form(...),
+        content: str = Form(...)
+    ):
+        return cls(title=title, content=content)

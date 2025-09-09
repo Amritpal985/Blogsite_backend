@@ -13,7 +13,7 @@ SECRET_KEY = '453878b316da85b9f90a9395138d5da95e628df8c6af9fbcad7f861fa61b5d2c'
 ALGORITHM = 'HS256'
 
 bcrypt_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-oauth2_bearer = OAuth2PasswordBearer(tokenUrl="token")
+oauth2_bearer = OAuth2PasswordBearer(tokenUrl="/users/login")
 
 
 def get_db():
@@ -47,6 +47,7 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_bearer)]):
         username: str = payload.get("sub")
         user_id: int = payload.get("id")
         role: str = payload.get("role")
+        print(payload)
         if username is None or user_id is None:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,detail="Could not validate credentials")
         return {"username": username, "id": user_id, "role": role}
