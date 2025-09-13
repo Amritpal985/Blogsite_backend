@@ -30,3 +30,10 @@ class PostBase(BaseModel):
         content: str = Form(...)
     ):
         return cls(title=title, content=content)
+
+class Postupdate(BaseModel):
+    title: Optional[str] = None
+    content: Optional[str] = None
+
+class CommentBase(BaseModel):
+    content: str = Field(..., min_length=1, max_length=300)
