@@ -83,4 +83,20 @@ async def login_for_access_token(db:db_dependency,form_data: Annotated[OAuth2Pas
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
+# api to get current user info
+@router.get("/me",status_code=status.HTTP_200_OK)
+async def read_users_me(current_user: Annotated[dict, Depends(auth_services.get_current_user)]):
+    if not current_user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
+    try:
+        user = {
+            "id": current_user.get("id"),
+            "username": current_user.get("username"),
+            "email": current_user.get("email"),
+            "role": current_user.get("role")
+        }
+        return user
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
 

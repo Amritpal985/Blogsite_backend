@@ -6,7 +6,6 @@ from database import SessionLocal
 from typing import Annotated
 from services import auth_services
 from schemas import CommentBase
-from datetime import datetime, timezone
 from sqlalchemy.exc import IntegrityError
 
 router = APIRouter(

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends, status, UploadFile, File
+from fastapi import APIRouter, HTTPException, Depends, status, UploadFile, File, Form
 from fastapi.responses import JSONResponse, Response
 from sqlalchemy.orm import Session
 from models import Users, Posts
@@ -8,6 +8,7 @@ from services import auth_services
 from schemas import PostBase, Postupdate
 from datetime import datetime, timezone
 from sqlalchemy.exc import IntegrityError
+from models import TagsEnum
 
 router = APIRouter(
     prefix="/posts",
@@ -32,6 +33,7 @@ async def get_all_posts_partial(db: db_dependency):
         post_model = db.query(Posts).join(Users, Posts.author_id == Users.id).with_entities(
             Posts.id,
             Posts.title,
+            Posts.tag,
             Posts.content,
             Posts.created_at,
             Users.id.label("author_id"),
@@ -44,6 +46,7 @@ async def get_all_posts_partial(db: db_dependency):
                 "id": post.id,
                 "title": post.title,
                 "content": content,
+                "tag": post.tag,
                 "created_at": post.created_at,
                 "author": {
                     "id": post.author_id,
@@ -69,6 +72,7 @@ async def get_post_detail(post_id:int,user:user_dependency,db: db_dependency):
             "id": post_model.id,
             "title": post_model.title,
             "content": post_model.content,
+            "tag": [tag for tag in post_model.tag],
             "image": f"/posts/{post_id}/image" if post_model.image else None,
             "created_at": post_model.created_at,
             "updated_at": post_model.updated_at,
@@ -103,6 +107,7 @@ async def create_posts(
     post_model = Posts(
         title=posts.title,
         content=posts.content,
+        tag=[t.value for t in posts.tag], # Convert enum to string values
         image=image_data,
         author_id=user_id
     )
@@ -141,6 +146,37 @@ async def updated_post(
         db.commit()
         db.refresh(post_model)
         return {"message": "Post updated successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+    
+
+# api to add more tags for a particular posts
+@router.put("/{post_id}/add_tags", status_code=status.HTTP_200_OK)
+async def add_tags_to_post(
+    post_id:int,
+    user: user_dependency,
+    db: db_dependency,
+    tags: list[TagsEnum]
+):
+    if not user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
+    try:
+        post_model = db.query(Posts).filter(Posts.id == post_id).first()
+        if not post_model:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="Post not found")
+        if post_model.author_id != user.get("id"):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You are not authorized to update this post")
+        
+        # Add new tags, avoiding duplicates
+        existing_tags = set(post_model.tag)
+        new_tags = set(t.value for t in tags)  # Convert enum to string values
+        updated_tags = list(existing_tags.union(new_tags))
+        post_model.tag = updated_tags
+
+        post_model.updated_at = datetime.now(timezone.utc)
+        db.commit()
+        db.refresh(post_model)
+        return {"message": "Tags added successfully", "tags": post_model.tag}
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
