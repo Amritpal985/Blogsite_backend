@@ -42,3 +42,8 @@ class Postupdate(BaseModel):
 
 class CommentBase(BaseModel):
     content: str = Field(..., min_length=1, max_length=300)
+
+
+class ChatRequest(BaseModel):
+    receiver_id: int
+    message: str

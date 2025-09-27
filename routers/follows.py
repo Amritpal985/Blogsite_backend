@@ -73,3 +73,22 @@ async def unfollow_user(user_id:int,db:db_dependency,user:user_dependency):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
+# api to get followers of current user
+@router.get("/followers", status_code=status.HTTP_200_OK)
+async def get_followers(db:db_dependency,user:user_dependency):
+    if not user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
+    try:
+        user_id = user["id"]
+        followers = db.query(Follows).filter(Follows.follower_id == user_id).all()
+        followers_username = []
+        for follower in followers:
+            user_model = db.query(Users).filter(Users.id == follower.following_id).first()
+            if user_model:
+                followers_username.append({
+                    "id": user_model.id,
+                    "username": user_model.username
+                })
+        return {"followers": followers_username}
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))

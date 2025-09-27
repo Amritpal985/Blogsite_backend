@@ -78,3 +78,14 @@ class Follows(Base):
     follower_id = Column(Integer, ForeignKey("users.id"))
     following_id = Column(Integer, ForeignKey("users.id"))
 
+# model for chat messages
+class ChatMessages(Base):
+    __tablename__ = "chat_messages"
+
+    id = Column(Integer,primary_key=True,index=True)
+    sender_id = Column(Integer, ForeignKey("users.id"))
+    receiver_id = Column(Integer, ForeignKey("users.id"))
+    message = Column(Text,index=True)
+    timestamp = Column(DateTime,index=True,default=datetime.now(timezone.utc))
+    is_read = Column(Integer, default=0)  # 0 for unread,
+
