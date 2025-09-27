@@ -50,3 +50,26 @@ async def follow_user(user_id:int, user: user_dependency, db: db_dependency):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
+# unfollow a user
+@router.delete("/unfollow/{user_id}", status_code=status.HTTP_200_OK)
+async def unfollow_user(user_id:int,db:db_dependency,user:user_dependency):
+    if not user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
+    try:
+        unfollow_ud = user["id"]
+        if unfollow_ud == user_id:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="You cannot unfollow yourself.")
+        # Check if the user to be unfollowed exists
+        user_to_infollow = db.query(Users).filter(Users.id == user_id).first()
+        if not user_to_infollow:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User to unfollow not found.")
+        # Check if the follow relationship exists
+        follow_relationship  = db.query(Follows).filter(Follows.follower_id == unfollow_ud, Follows.following_id == user_id).first()
+        if not follow_relationship:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="You are not following this user.")
+        db.delete(follow_relationship)
+        db.commit()
+        return {"message": "Unfollowed successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
