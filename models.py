@@ -17,26 +17,6 @@ class Users(Base):
     role = Column(String,index=True)
     created_at = Column(DateTime,index=True,default=datetime.now(timezone.utc))
 
-# add tags 
-class TagsEnum(str, Enum):
-    TECHNOLOGY = "Technology"
-    HEALTH = "Health"
-    LIFESTYLE = "Lifestyle"
-    EDUCATION = "Education"
-    ENTERTAINMENT = "Entertainment"
-    BUSINESS = "Business"
-    TRAVEL = "Travel"
-    FOOD = "Food"
-    FASHION = "Fashion"
-    SPORTS = "Sports"
-    POLITICS = "Politics"
-    SCIENCE = "Science"
-    ENVIRONMENT = "Environment"
-    ART = "Art"
-    CULTURE = "Culture"
-    OTHER = "Other"
-
-
 # Model for posts
 class Posts(Base):
     __tablename__ = "posts"
@@ -45,7 +25,7 @@ class Posts(Base):
     title = Column(String,index=True)
     image = Column(LargeBinary,nullable=True) # Storing image as binary data
     content = Column(Text,index=True)
-    tag = Column(MutableList.as_mutable(ARRAY(String)), default=[TagsEnum.OTHER.value])
+    tag = Column(String, default="Other") # to-do make it string of values
     created_at = Column(DateTime,index=True,default=datetime.now(timezone.utc))
     updated_at = Column(DateTime,index=True,default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
     author_id = Column(Integer, ForeignKey("users.id"))

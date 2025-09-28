@@ -8,7 +8,7 @@ from services import auth_services
 from schemas import PostBase, Postupdate
 from datetime import datetime, timezone
 from sqlalchemy.exc import IntegrityError
-from models import TagsEnum
+
 
 router = APIRouter(
     prefix="/follows",
@@ -34,11 +34,9 @@ async def follow_user(user_id:int, user: user_dependency, db: db_dependency):
         follow_id = user["id"]
         if follow_id == user_id:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="You cannot follow yourself.")
-        # Check if the user to be followed exists
         user_to_follow = db.query(Users).filter(Users.id == user_id).first()
         if not user_to_follow:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User to follow not found.")
-        # Create a new follow relationship
         new_follow  = Follows(follower_id=follow_id, following_id=user_id)
         db.add(new_follow)
         db.commit()

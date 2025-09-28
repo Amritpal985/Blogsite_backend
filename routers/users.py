@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
-from models import Users
+from models import Users, Posts,Follows
 from database import SessionLocal
 from typing import Annotated
 from services import auth_services
@@ -84,16 +84,25 @@ async def login_for_access_token(db:db_dependency,form_data: Annotated[OAuth2Pas
     return {"access_token": access_token, "token_type": "bearer"}
 
 # api to get current user info
+# username,email,role, id, followers, following, total_posts
 @router.get("/me",status_code=status.HTTP_200_OK)
-async def read_users_me(current_user: Annotated[dict, Depends(auth_services.get_current_user)]):
+async def read_users_me(current_user: Annotated[dict, Depends(auth_services.get_current_user)],db: db_dependency):
     if not current_user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
     try:
+        model = db.query(Posts).filter(Posts.author_id == current_user.get("id")).all()
+        total_posts = len(model)
+        followers = db.query(Follows).filter(Follows.following_id == current_user.get("id")).count()
+        following = db.query(Follows).filter(Follows.follower_id == current_user.get("id")).count()
+        email = db.query(Users).filter(Users.id == current_user.get("id")).first().email
         user = {
             "id": current_user.get("id"),
             "username": current_user.get("username"),
-            "email": current_user.get("email"),
-            "role": current_user.get("role")
+            "email": email,
+            "role": current_user.get("role"),
+            "total_posts": total_posts,
+            "followers": followers,
+            "following": following
         }
         return user
     except Exception as e:
