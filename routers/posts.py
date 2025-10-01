@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends, status, UploadFile, File, Form
 from fastapi.responses import JSONResponse, Response
 from sqlalchemy.orm import Session
-from models import Users, Posts
+from models import Users, Posts, Likes 
 from database import SessionLocal
 from typing import Annotated
 from services import auth_services
@@ -64,6 +64,10 @@ async def get_post_detail(post_id:int,user:user_dependency,db: db_dependency):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
     try:
         post_model = db.query(Posts).filter(Posts.id == post_id).first()
+        author_id = post_model.author_id if post_model else None
+        like_count = db.query(Likes).filter(Likes.post_id == post_id).count()
+
+        author_username = db.query(Users.username).filter(Users.id == author_id).first() if author_id else None
         if not post_model:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found")
         res = []
@@ -71,13 +75,18 @@ async def get_post_detail(post_id:int,user:user_dependency,db: db_dependency):
             "id": post_model.id,
             "title": post_model.title,
             "content": post_model.content,
-            "tag": post_model.tag,
+            "tags": post_model.tag,
             "image": f"/posts/{post_id}/image" if post_model.image else None,
             "created_at": post_model.created_at,
             "updated_at": post_model.updated_at,
-            "author_id": post_model.author_id
+            "like_count": like_count,
+            "author": {
+                "id": post_model.author_id,
+                "username": author_username[0] if author_username else None
+            }
         })
-        return res
+        # return as object
+        return res[0] if res else None
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
@@ -110,7 +119,7 @@ async def create_posts(
     post_model = Posts(
         title=title,
         content=content,
-        tag="[{}]".format(tag),  # store as simple string
+        tag=",".join(tag.split(",")),  # store as simple string
         image=image_data,
         author_id=user_id
     )
