@@ -8,6 +8,7 @@ from services import auth_services
 from schemas import PostBase, Postupdate
 from datetime import datetime, timezone
 from sqlalchemy.exc import IntegrityError
+from fastapi import Form, File, UploadFile
 
 router = APIRouter(
     prefix="/posts",
@@ -99,8 +100,6 @@ async def get_post_image(post_id: int,user:user_dependency,db: db_dependency):
     return Response(content=post.image, media_type="image/jpeg")
 
 # post api for creating a post
-from fastapi import Form, File, UploadFile
-
 @router.post("/create_posts", status_code=status.HTTP_201_CREATED)
 async def create_posts(
     user: user_dependency,

@@ -30,17 +30,27 @@ async def get_comment_for_post(post_id:int,user:user_dependency,db:db_dependency
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,detail="Unauthorized")
     try:
         comment_model = db.query(Comments).filter(Comments.post_id==post_id).all()
+        # want in the format of list of dict comment_id, content, author_name, created_at, children
+        # children is an array containing id, author of thet child comment, content and then again children
         if not comment_model:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No comments found for this post")
-        res = []
-        for comment in comment_model:
-            res.append({
-                "id": comment.id,
-                "content": comment.content,
-                "author_id": comment.author_id,
-                "created_at": comment.created_at
-            })
-        return res 
+        def build_comment_tree(comments, parent_id=None):
+            tree = []
+            for comment in comments:
+                print(comment.parent_comment_id, parent_id)
+                if comment.parent_comment_id == parent_id:
+                    author = db.query(Users).filter(Users.id == comment.author_id).first()
+                    comment_dict = {
+                        "id": comment.id,
+                        "content": comment.content,
+                        "author_name": author.fullname if author else "Unknown",
+                        "created_at": comment.created_at,
+                        "children": build_comment_tree(comments, comment.id)
+                    }
+                    tree.append(comment_dict)
+            return tree
+        comment_tree = build_comment_tree(comment_model)
+        return comment_tree
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail=str(e))
 
