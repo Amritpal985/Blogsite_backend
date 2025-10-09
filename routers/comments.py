@@ -37,7 +37,6 @@ async def get_comment_for_post(post_id:int,user:user_dependency,db:db_dependency
         def build_comment_tree(comments, parent_id=None):
             tree = []
             for comment in comments:
-                print(comment.parent_comment_id, parent_id)
                 if comment.parent_comment_id == parent_id:
                     author = db.query(Users).filter(Users.id == comment.author_id).first()
                     comment_dict = {
