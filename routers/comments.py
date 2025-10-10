@@ -25,15 +25,13 @@ user_dependency = Annotated[Session,Depends(auth_services.get_current_user)]
 
 # to get all comments for a Particular post
 @router.get("/{post_id}",status_code=status.HTTP_200_OK)
-async def get_comment_for_post(post_id:int,user:user_dependency,db:db_dependency):
-    if not user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,detail="Unauthorized")
+async def get_comment_for_post(post_id:int,db:db_dependency):
     try:
         comment_model = db.query(Comments).filter(Comments.post_id==post_id).all()
+        if not comment_model:
+            return []
         # want in the format of list of dict comment_id, content, author_name, created_at, children
         # children is an array containing id, author of thet child comment, content and then again children
-        if not comment_model:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No comments found for this post")
         def build_comment_tree(comments, parent_id=None):
             tree = []
             for comment in comments:
@@ -57,7 +55,7 @@ async def get_comment_for_post(post_id:int,user:user_dependency,db:db_dependency
 @router.post("/{post_id}",status_code=status.HTTP_201_CREATED)
 async def post_comment(post_id:int,comment:CommentBase,user:user_dependency,db:db_dependency):
     if not user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,detail="Unauthorized")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,detail="You are not logged in. Please log in to continue.")
     try:
         post_exists = db.query(Posts).filter(Posts.id == post_id).first()
         if not post_exists:
@@ -71,7 +69,7 @@ async def post_comment(post_id:int,comment:CommentBase,user:user_dependency,db:d
         db.add(comment_model)
         db.commit()
         db.refresh(comment_model)
-        return {"message":"Comment Added"}
+        return {"message":"Comment added successfully.", "comment": {"id": comment_model.id, "author_name": user.get("username")}}
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail=str(e))
 
@@ -79,7 +77,7 @@ async def post_comment(post_id:int,comment:CommentBase,user:user_dependency,db:d
 @router.post("/reply/{comment_id}",status_code=status.HTTP_201_CREATED)
 async def post_nested_comment(comment_id:int,user:user_dependency,db:db_dependency,comment:CommentBase):
     if not user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,detail="Unauthorized")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,detail="You are not logged in. Please log in to continue.")
     try:
         parent_comment = db.query(Comments).filter(Comments.id == comment_id).first()
         if not parent_comment:
@@ -94,9 +92,6 @@ async def post_nested_comment(comment_id:int,user:user_dependency,db:db_dependen
         db.add(nested_comment)
         db.commit()
         db.refresh(nested_comment)
-        return {"message":"Nested Comment Added"}
+        return {"message":"Reply added successfully.", "comment": {"id": nested_comment.id, "author_name": user.get("username")}}
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail=str(e))
-
-
-

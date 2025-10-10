@@ -60,9 +60,7 @@ async def get_all_posts_partial(db: db_dependency):
 
 # get api to all info for a particular post
 @router.get("/{post_id}",status_code=status.HTTP_200_OK)
-async def get_post_detail(post_id:int,user:user_dependency,db: db_dependency):
-    if not user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
+async def get_post_detail(post_id:int,db: db_dependency):
     try:
         post_model = db.query(Posts).filter(Posts.id == post_id).first()
         author_id = post_model.author_id if post_model else None
