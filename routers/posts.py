@@ -27,8 +27,9 @@ db_dependency = Annotated[Session, Depends(get_db)]
 user_dependency = Annotated[dict, Depends(auth_services.get_current_user)]
 
 # Get api for all posts along with its authorname and userid
+# with pagination
 @router.get("/",status_code=status.HTTP_200_OK)
-async def get_all_posts_partial(db: db_dependency):
+def get_all_posts_partial(db: db_dependency,page_number: int = 1, page_size: int = 2):
     try:
         # query to fetch all posts with its userid and username
         post_model = db.query(Posts).join(Users, Posts.author_id == Users.id).with_entities(
@@ -39,7 +40,7 @@ async def get_all_posts_partial(db: db_dependency):
             Posts.created_at,
             Users.id.label("author_id"),
             Users.username.label("author_username")
-        ).all()
+        ).offset((page_number - 1) * page_size).limit(page_size).all()
         result = []
         for post in post_model:
             content = post.content[:70] + "..." if len(post.content) > 70 else post.content
@@ -61,7 +62,7 @@ async def get_all_posts_partial(db: db_dependency):
 
 # get api to all info for a particular post
 @router.get("/{post_id}",status_code=status.HTTP_200_OK)
-async def get_post_detail(post_id:int,db: db_dependency):
+def get_post_detail(post_id:int,db: db_dependency):
     try:
         post_model = db.query(Posts).filter(Posts.id == post_id).first()
         author_id = post_model.author_id if post_model else None
