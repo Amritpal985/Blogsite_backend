@@ -5,8 +5,6 @@ from models import Users, Follows
 from database import SessionLocal
 from typing import Annotated
 from services import auth_services
-from schemas import PostBase, Postupdate
-from datetime import datetime, timezone
 from sqlalchemy.exc import IntegrityError
 
 
@@ -27,7 +25,7 @@ user_dependency = Annotated[dict, Depends(auth_services.get_current_user)]
 
 # api to follow a user
 @router.post("/follow/{user_id}", status_code=status.HTTP_200_OK)
-async def follow_user(user_id:int, user: user_dependency, db: db_dependency):
+def follow_user(user_id:int, user: user_dependency, db: db_dependency):
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
     try:
@@ -50,7 +48,7 @@ async def follow_user(user_id:int, user: user_dependency, db: db_dependency):
 
 # unfollow a user
 @router.delete("/unfollow/{user_id}", status_code=status.HTTP_200_OK)
-async def unfollow_user(user_id:int,db:db_dependency,user:user_dependency):
+def unfollow_user(user_id:int,db:db_dependency,user:user_dependency):
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
     try:
@@ -73,7 +71,7 @@ async def unfollow_user(user_id:int,db:db_dependency,user:user_dependency):
 
 # api to get followers of current user
 @router.get("/followers", status_code=status.HTTP_200_OK)
-async def get_followers(db:db_dependency,user:user_dependency):
+def get_followers(db:db_dependency,user:user_dependency):
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
     try:

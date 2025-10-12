@@ -98,7 +98,7 @@ async def read_users_me(current_user: Annotated[dict, Depends(auth_services.get_
         user = {
             "id": current_user.get("id"),
             "username": current_user.get("username"),
-            "email": ema,
+            "email": email,
             "role": current_user.get("role"),
             "total_posts": total_posts,
             "followers": followers,

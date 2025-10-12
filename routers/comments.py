@@ -25,7 +25,7 @@ user_dependency = Annotated[Session,Depends(auth_services.get_current_user)]
 
 # to get all comments for a Particular post
 @router.get("/{post_id}",status_code=status.HTTP_200_OK)
-async def get_comment_for_post(post_id:int,db:db_dependency):
+def get_comment_for_post(post_id:int,db:db_dependency):
     try:
         comment_model = db.query(Comments).filter(Comments.post_id==post_id).all()
         if not comment_model:
@@ -53,7 +53,7 @@ async def get_comment_for_post(post_id:int,db:db_dependency):
 
 # To make a comment for a post
 @router.post("/{post_id}",status_code=status.HTTP_201_CREATED)
-async def post_comment(post_id:int,comment:CommentBase,user:user_dependency,db:db_dependency):
+def post_comment(post_id:int,comment:CommentBase,user:user_dependency,db:db_dependency):
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,detail="You are not logged in. Please log in to continue.")
     try:
@@ -75,7 +75,7 @@ async def post_comment(post_id:int,comment:CommentBase,user:user_dependency,db:d
 
 # To make a nested comment
 @router.post("/reply/{comment_id}",status_code=status.HTTP_201_CREATED)
-async def post_nested_comment(comment_id:int,user:user_dependency,db:db_dependency,comment:CommentBase):
+def post_nested_comment(comment_id:int,user:user_dependency,db:db_dependency,comment:CommentBase):
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,detail="You are not logged in. Please log in to continue.")
     try:

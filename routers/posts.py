@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends, status, UploadFile, File, Form
+from sqlalchemy import or_
 from fastapi.responses import JSONResponse, Response
 from sqlalchemy.orm import Session
 from models import Users, Posts, Likes 
@@ -88,6 +89,46 @@ async def get_post_detail(post_id:int,db: db_dependency):
         return res[0] if res else None
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+# get api(filter api) for posts by tag and author username(LIKE)
+@router.get("/filter/{author}/{tag}",status_code=status.HTTP_200_OK)
+def filter_posts(db: db_dependency,user:user_dependency,tag:str,author:str):
+    if not user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
+    try:
+        query = db.query(Posts,Users.username).join(Users, Posts.author_id == Users.id)
+        if tag.lower() != "all":
+            tag_list = [tag.strip() for tag in tag.split(",") if tag.strip()]
+            print(tag_list)
+            tag_filters = [Posts.tag.ilike(f"%{t}%") for t in tag_list]
+            query = query.filter(or_(*tag_filters))
+        
+        query = query.filter(Users.username.ilike(f"%{author}%"))
+
+        records = query.all()
+        result = []
+        for post_model, author_username in records:
+              content = (
+                post_model.content[:70] + "..."
+                if len(post_model.content) > 70
+                else post_model.content
+            )
+              result.append({
+                    "id": post_model.id,
+                    "title": post_model.title,
+                    "content": content,
+                    "tag": post_model.tag,
+                    "created_at": post_model.created_at,
+                    "author": {
+                        "id": post_model.author_id,
+                        "username": author_username
+                    }
+                })
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+
 
 # get api for image 
 @router.get("/{post_id}/image")
