@@ -57,7 +57,7 @@ def send_message(chat_request: ChatRequest,current_user: user_dependency,db: db_
         db.add(new_message)
         db.commit()
         db.refresh(new_message)
-        return {"message": "Message sent successfully", "data": new_message.id}
+        return {"sender_id": new_message.sender_id, "receiver_id":new_message.receiver_id}
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
@@ -125,14 +125,13 @@ async def websocket_endpoint(websocket: WebSocket,user_id:str,db: db_dependency)
                 await active_connections[receiver_id].send_json({
                     "sender_id": sender_id,
                     "message": message_text,
+                    "receiver_id":receiver_id,
                     "timestamp": new_message.timestamp.isoformat()
                 })
             await websocket.send_json({
-                "message": "Message sent successfully",
-                "data": {
-                    "id": new_message.id,
-                    "timestamp": new_message.timestamp.isoformat()
-                }
+                "message": message_text,
+                "sender_id":sender_id,
+                "receiver_id":receiver_id,
             })                                          
     except WebSocketDisconnect:
         active_connections.pop(user_id, None)

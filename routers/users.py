@@ -81,7 +81,7 @@ async def login_for_access_token(db:db_dependency,form_data: Annotated[OAuth2Pas
         user.role,
         timedelta(minutes=30)
     )
-    return {"access_token": access_token, "token_type": "bearer"}
+    return {"access_token": access_token, "token_type": "bearer", "user_id": user.id}
 
 # api to get current user info
 # username,email,role, id, followers, following, total_posts
