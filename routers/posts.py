@@ -41,6 +41,7 @@ def get_all_posts_partial(db: db_dependency,page_number: int = 1, page_size: int
             Users.id.label("author_id"),
             Users.username.label("author_username")
         ).offset((page_number - 1) * page_size).limit(page_size).all()
+        total_posts = db.query(Posts).all()
         result = []
         for post in post_model:
             content = post.content[:70] + "..." if len(post.content) > 70 else post.content
@@ -55,7 +56,7 @@ def get_all_posts_partial(db: db_dependency,page_number: int = 1, page_size: int
                     "username": post.author_username
                 }
             })
-        return result
+        return {"result": result, "totalPosts": len(total_posts)} 
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
     
