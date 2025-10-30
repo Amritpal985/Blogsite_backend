@@ -38,3 +38,8 @@ class CommentBase(BaseModel):
 class ChatRequest(BaseModel):
     receiver_id: int
     message: str
+
+class Updateuser(BaseModel):
+    fullname: Optional[str] = None
+    username: Optional[str] = None
+    password: Optional[str] = None

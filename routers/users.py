@@ -5,7 +5,7 @@ from models import Users, Posts,Follows
 from database import SessionLocal
 from typing import Annotated
 from services import auth_services
-from schemas import CreateUserRequest, Token, UserResponse
+from schemas import CreateUserRequest, Token, UserResponse, Updateuser
 from datetime import timedelta
 from sqlalchemy.exc import IntegrityError
 
@@ -109,3 +109,27 @@ async def read_users_me(current_user: Annotated[dict, Depends(auth_services.get_
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 
+# update user info
+@router.put("/update", status_code=status.HTTP_200_OK)
+def update_user_info(current_user: Annotated[dict, Depends(auth_services.get_current_user)],
+                     db: db_dependency,
+                     user_update: Updateuser):
+    if not current_user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
+    try:
+        current_user_id = current_user.get("id")
+        user_model = db.query(Users).filter(Users.id == current_user_id).first()
+        if not user_model:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        if user_update.fullname:
+            user_model.fullname = user_update.fullname
+        if user_update.username:
+            user_model.username = user_update.username
+        if user_update.password:
+            user_model.password = bycrpt_context.hash(user_update.password)
+        db.commit()
+        db.refresh(user_model)
+        return {"message": "User information updated successfully."}
+    
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
