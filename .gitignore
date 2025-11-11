@@ -2,3 +2,8 @@
 venv/
 .venv 
 __pycache__/
+migrations/
+migrations/__pycache__/
+migrations/versions/
+alembic.ini
+*.pyc

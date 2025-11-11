@@ -16,6 +16,8 @@ class Users(Base):
     password = Column(String,index=True)
     role = Column(String,index=True)
     created_at = Column(DateTime,index=True,default=datetime.now(timezone.utc))
+    image = Column(LargeBinary, nullable=True)   # <-- should be present
+    about_me = Column(Text, nullable=True)       # <-- should be present
 
 # Model for posts
 class Posts(Base):
