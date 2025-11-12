@@ -15,9 +15,10 @@ class Users(Base):
     email = Column(String,unique=True,index=True)
     password = Column(String,index=True)
     role = Column(String,index=True)
+    # bio = Column(Text, nullable=True)
     created_at = Column(DateTime,index=True,default=datetime.now(timezone.utc))
-    image = Column(LargeBinary, nullable=True)   # <-- should be present
-    about_me = Column(Text, nullable=True)       # <-- should be present
+    image = Column(LargeBinary, nullable=True)   
+    about_me = Column(Text, nullable=True)
 
 # Model for posts
 class Posts(Base):

@@ -9,6 +9,7 @@ from services import auth_services
 from schemas import  Token, UserResponse, UpdateUserForm
 from datetime import timedelta
 from sqlalchemy.exc import IntegrityError
+import base64
 
 
 router = APIRouter(
@@ -103,20 +104,31 @@ async def read_users_me(current_user: Annotated[dict, Depends(auth_services.get_
         followers = db.query(Follows).filter(Follows.following_id == current_user.get("id")).count()
         following = db.query(Follows).filter(Follows.follower_id == current_user.get("id")).count()
         email = db.query(Users).filter(Users.id == current_user.get("id")).first().email
+        image_str = None
+        if model:
+            if model[0].author.image:
+                image_str = base64.b64encode(model[0].author.image).decode('utf-8')
+        else:
+            user_image = db.query(Users).filter(Users.id == current_user.get("id")).first().image
+            if user_image:
+                image_str = base64.b64encode(user_image).decode('utf-8')
         user = {
             "id": current_user.get("id"),
             "username": current_user.get("username"),
+            "fullname": model[0].author.fullname if model else db.query(Users).filter(Users.id == current_user.get("id")).first().fullname,
             "email": email,
+            "about_me": model[0].author.about_me if model else db.query(Users).filter(Users.id == current_user.get("id")).first().about_me,
             "role": current_user.get("role"),
             "total_posts": total_posts,
             "followers": followers,
-            "following": following
+            "following": following,
+            "image": image_str
         }
         return user
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
-
+# check this api
 # update user info
 @router.put("/update", status_code=status.HTTP_200_OK)
 async def update_user_info(
