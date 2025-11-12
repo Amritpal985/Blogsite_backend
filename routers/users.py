@@ -1,11 +1,12 @@
-from fastapi import APIRouter, HTTPException, Depends, status
+from fastapi import APIRouter, HTTPException, Depends, status,File, UploadFile, Form
+from typing import Optional
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from models import Users, Posts,Follows
 from database import SessionLocal
 from typing import Annotated
 from services import auth_services
-from schemas import CreateUserRequest, Token, UserResponse, Updateuser
+from schemas import  Token, UserResponse, UpdateUserForm
 from datetime import timedelta
 from sqlalchemy.exc import IntegrityError
 
@@ -30,26 +31,33 @@ authenticate_user = auth_services.authenticate_user
 # signup
 @router.post("/signup", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def create_user(
-    user: CreateUserRequest, 
+    username: str = Form(...),
+    email: str = Form(...),
+    password: str = Form(...),
+    fullname: str = Form(...),
+    role: str = Form(...),
+    about_me: Optional[str] = Form(None),
+    image: UploadFile = File(None),
     db: Session = Depends(get_db)
 ):
-    # check if username or email already exists
     existing_user = db.query(Users).filter(
-        (Users.username == user.username) | (Users.email == user.email)
+        (Users.username == username) | (Users.email == email)
     ).first()
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Username or Email already registered."
         )
-    
-    # create user object
+
+    image_bytes = await image.read() if image else None
     user_model = Users(
-        fullname=user.fullname,
-        username=user.username,
-        email=user.email,
-        password=bycrpt_context.hash(user.password),
-        role=user.role
+        fullname=fullname,
+        username=username,
+        email=email,
+        password=bycrpt_context.hash(password),
+        role=role,
+        about_me=about_me,
+        image=image_bytes
     )
 
     try:
@@ -111,25 +119,47 @@ async def read_users_me(current_user: Annotated[dict, Depends(auth_services.get_
 
 # update user info
 @router.put("/update", status_code=status.HTTP_200_OK)
-def update_user_info(current_user: Annotated[dict, Depends(auth_services.get_current_user)],
-                     db: db_dependency,
-                     user_update: Updateuser):
+async def update_user_info(
+    current_user: Annotated[dict, Depends(auth_services.get_current_user)],
+    db: db_dependency,
+    form_data: UpdateUserForm = Depends()
+):
     if not current_user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, 
+            detail="Unauthorized"
+        )
+
     try:
         current_user_id = current_user.get("id")
         user_model = db.query(Users).filter(Users.id == current_user_id).first()
         if not user_model:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-        if user_update.fullname:
-            user_model.fullname = user_update.fullname
-        if user_update.username:
-            user_model.username = user_update.username
-        if user_update.password:
-            user_model.password = bycrpt_context.hash(user_update.password)
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, 
+                detail="User not found"
+            )
+
+        # Update only provided fields
+        if form_data.fullname:
+            user_model.fullname = form_data.fullname
+        if form_data.username:
+            user_model.username = form_data.username
+        if form_data.password:
+            user_model.password = bycrpt_context.hash(form_data.password)
+        if form_data.about_me:
+            user_model.about_me = form_data.about_me
+        if form_data.image:
+            image_bytes = await form_data.image.read()
+            user_model.image = image_bytes
+
         db.commit()
         db.refresh(user_model)
+
         return {"message": "User information updated successfully."}
-    
+
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
+            detail=str(e)
+        )

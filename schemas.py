@@ -1,14 +1,7 @@
 from pydantic import BaseModel, Field, EmailStr
 from typing import Optional, List
-from fastapi import Form
+from fastapi import Form, UploadFile, File
 
-
-class CreateUserRequest(BaseModel):
-    username: str = Field(min_length=5)
-    email: str
-    password: str= Field(min_length=6)
-    fullname: str
-    role: str
 
 class Token(BaseModel):
     access_token: str
@@ -39,7 +32,17 @@ class ChatRequest(BaseModel):
     receiver_id: int
     message: str
 
-class Updateuser(BaseModel):
-    fullname: Optional[str] = None
-    username: Optional[str] = None
-    password: Optional[str] = None
+class UpdateUserForm:
+    def __init__(
+        self,
+        fullname: Optional[str] = Form(None),
+        username: Optional[str] = Form(None),
+        password: Optional[str] = Form(None),
+        about_me: Optional[str] = Form(None),
+        image: Optional[UploadFile] = File(None)
+    ):
+        self.fullname = fullname
+        self.username = username
+        self.password = password
+        self.about_me = about_me
+        self.image = image
