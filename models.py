@@ -15,7 +15,7 @@ class Users(Base):
     email = Column(String,unique=True,index=True)
     password = Column(String,index=True)
     role = Column(String,index=True)
-    # bio = Column(Text, nullable=True)
+    bio = Column(String, nullable=True)
     created_at = Column(DateTime,index=True,default=datetime.now(timezone.utc))
     image = Column(LargeBinary, nullable=True)   
     about_me = Column(Text, nullable=True)

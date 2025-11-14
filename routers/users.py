@@ -119,6 +119,7 @@ async def read_users_me(current_user: Annotated[dict, Depends(auth_services.get_
             "email": email,
             "about_me": model[0].author.about_me if model else db.query(Users).filter(Users.id == current_user.get("id")).first().about_me,
             "role": current_user.get("role"),
+            "bio": model[0].author.bio if model else db.query(Users).filter(Users.id == current_user.get("id")).first().bio,
             "total_posts": total_posts,
             "followers": followers,
             "following": following,
@@ -152,14 +153,18 @@ async def update_user_info(
             )
 
         # Update only provided fields
-        if form_data.fullname:
+        # ...existing code...
+        # Update only provided fields (skip empty strings and None)
+        if form_data.fullname is not None and form_data.fullname != "string":
             user_model.fullname = form_data.fullname
-        if form_data.username:
-            user_model.username = form_data.username
-        if form_data.password:
+        if form_data.password is not None and form_data.password != "string":
             user_model.password = bycrpt_context.hash(form_data.password)
-        if form_data.about_me:
+        if form_data.about_me is not None and form_data.about_me != "string":
             user_model.about_me = form_data.about_me
+        if form_data.username is not None and form_data.username != "string":
+            user_model.username = form_data.username
+        if form_data.bio is not None and form_data.bio != "string":
+            user_model.bio = form_data.bio
         if form_data.image:
             image_bytes = await form_data.image.read()
             user_model.image = image_bytes

@@ -36,13 +36,16 @@ class UpdateUserForm:
     def __init__(
         self,
         fullname: Optional[str] = Form(None),
-        username: Optional[str] = Form(None),
         password: Optional[str] = Form(None),
         about_me: Optional[str] = Form(None),
+        username: Optional[str] = Form(None),
+        bio: Optional[str] = Form(None),
         image: Optional[UploadFile] = File(None)
     ):
         self.fullname = fullname
-        self.username = username
         self.password = password
         self.about_me = about_me
+        self.username = username
+        self.bio = bio
         self.image = image
+
