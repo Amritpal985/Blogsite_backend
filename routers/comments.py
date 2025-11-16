@@ -7,6 +7,7 @@ from typing import Annotated
 from services import auth_services
 from schemas import CommentBase
 from sqlalchemy.exc import IntegrityError
+import base64
 
 router = APIRouter(
     prefix="/comments",
@@ -37,12 +38,15 @@ def get_comment_for_post(post_id:int,db:db_dependency):
             for comment in comments:
                 if comment.parent_comment_id == parent_id:
                     author = db.query(Users).filter(Users.id == comment.author_id).first()
+                    image  = author.image if author else ""
+                    if(image):image = base64.b64encode(image).decode('utf-8')
                     comment_dict = {
                         "id": comment.id,
                         "content": comment.content,
                         "author_name": author.fullname if author else "Unknown",
                         "created_at": comment.created_at,
-                        "children": build_comment_tree(comments, comment.id)
+                        "children": build_comment_tree(comments, comment.id),
+                        "image": image
                     }
                     tree.append(comment_dict)
             return tree
