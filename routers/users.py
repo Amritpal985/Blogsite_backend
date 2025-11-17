@@ -180,3 +180,7 @@ async def update_user_info(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
             detail=str(e)
         )
+
+
+
+    

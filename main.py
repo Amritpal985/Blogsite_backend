@@ -3,6 +3,7 @@ import models
 from database import engine
 from routers import users,posts,comments,likes, follows, chat
 from fastapi.middleware.cors import CORSMiddleware
+from middlewares.rate_limit import RateLimitMiddleware
 
 app = FastAPI()
 models.Base.metadata.create_all(bind=engine)
@@ -14,6 +15,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.add_middleware(RateLimitMiddleware)
 
 app.include_router(users.router)
 app.include_router(posts.router)
