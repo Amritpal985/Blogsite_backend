@@ -31,8 +31,6 @@ def get_comment_for_post(post_id:int,db:db_dependency):
         comment_model = db.query(Comments).filter(Comments.post_id==post_id).all()
         if not comment_model:
             return []
-        # want in the format of list of dict comment_id, content, author_name, created_at, children
-        # children is an array containing id, author of thet child comment, content and then again children
         def build_comment_tree(comments, parent_id=None):
             tree = []
             for comment in comments:
