@@ -95,31 +95,27 @@ async def login_for_access_token(db:db_dependency,form_data: Annotated[OAuth2Pas
 # api to get current user info
 # username,email,role, id, followers, following, total_posts
 @router.get("/me",status_code=status.HTTP_200_OK)
-async def read_users_me(current_user: Annotated[dict, Depends(auth_services.get_current_user)],db: db_dependency):
+async def read_users_me(current_user: Annotated[dict, Depends(auth_services.get_current_user)], db: db_dependency):
     if not current_user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
     try:
-        model = db.query(Posts).filter(Posts.author_id == current_user.get("id")).all()
-        total_posts = len(model)
+        user_model = db.query(Users).filter(Users.id == current_user.get("id")).first()
+        if not user_model:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        total_posts = db.query(Posts).filter(Posts.author_id == current_user.get("id")).count()
         followers = db.query(Follows).filter(Follows.following_id == current_user.get("id")).count()
         following = db.query(Follows).filter(Follows.follower_id == current_user.get("id")).count()
-        email = db.query(Users).filter(Users.id == current_user.get("id")).first().email
         image_str = None
-        if model:
-            if model[0].author.image:
-                image_str = base64.b64encode(model[0].author.image).decode('utf-8')
-        else:
-            user_image = db.query(Users).filter(Users.id == current_user.get("id")).first().image
-            if user_image:
-                image_str = base64.b64encode(user_image).decode('utf-8')
+        if user_model.image:
+            image_str = base64.b64encode(user_model.image).decode('utf-8')
         user = {
-            "id": current_user.get("id"),
-            "username": current_user.get("username"),
-            "fullname": model[0].author.fullname if model else db.query(Users).filter(Users.id == current_user.get("id")).first().fullname,
-            "email": email,
-            "about_me": model[0].author.about_me if model else db.query(Users).filter(Users.id == current_user.get("id")).first().about_me,
-            "role": current_user.get("role"),
-            "bio": model[0].author.bio if model else db.query(Users).filter(Users.id == current_user.get("id")).first().bio,
+            "id": user_model.id,
+            "username": user_model.username,
+            "fullname": user_model.fullname,
+            "email": user_model.email,
+            "about_me": user_model.about_me,
+            "role": user_model.role,
+            "bio": user_model.bio,
             "total_posts": total_posts,
             "followers": followers,
             "following": following,

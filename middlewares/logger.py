@@ -33,7 +33,6 @@ def send_log(message: dict):
                 sequenceToken=sequence_token
             )
         else:
-            # First time log stream creation
             try:
                 logs_client.create_log_stream(
                     logGroupName=LOG_GROUP,
@@ -51,6 +50,5 @@ def send_log(message: dict):
         sequence_token = response["nextSequenceToken"]
 
     except logs_client.exceptions.InvalidSequenceTokenException as e:
-        # Fix token mismatch if logs are pushed fast
         sequence_token = e.response["expectedSequenceToken"]
         send_log(message)
