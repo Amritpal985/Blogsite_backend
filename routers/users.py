@@ -148,9 +148,6 @@ async def update_user_info(
                 detail="User not found"
             )
 
-        # Update only provided fields
-        # ...existing code...
-        # Update only provided fields (skip empty strings and None)
         if form_data.fullname is not None and form_data.fullname != "string":
             user_model.fullname = form_data.fullname
         if form_data.password is not None and form_data.password != "string":
