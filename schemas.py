@@ -49,3 +49,4 @@ class UpdateUserForm:
         self.bio = bio
         self.image = image
 
+

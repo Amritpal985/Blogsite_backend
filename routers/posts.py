@@ -1,10 +1,10 @@
-from fastapi import APIRouter, HTTPException, Depends, status, UploadFile, File, Form
+from fastapi import APIRouter, HTTPException, Depends, status, UploadFile, File, Form, Query
 from sqlalchemy import or_
 from fastapi.responses import JSONResponse, Response
 from sqlalchemy.orm import Session
 from models import Users, Posts, Likes 
 from database import SessionLocal
-from typing import Annotated
+from typing import Annotated, Optional
 from services import auth_services
 from schemas import PostBase, Postupdate
 from datetime import datetime, timezone
@@ -28,11 +28,16 @@ user_dependency = Annotated[dict, Depends(auth_services.get_current_user)]
 
 # Get api for all posts along with its authorname and userid
 # with pagination
-@router.get("/",status_code=status.HTTP_200_OK)
-def get_all_posts_partial(db: db_dependency,page_number: int = 1, page_size: int = 2):
+@router.get("/", status_code=status.HTTP_200_OK)
+def get_posts(
+    db: db_dependency,
+    author: Optional[str] = Query(None),
+    tag: Optional[str] = Query(None),
+    page_number: int = Query(1, ge=1),
+    page_size: int = Query(2, ge=1)
+):
     try:
-        # query to fetch all posts with its userid and username
-        post_model = db.query(Posts).join(Users, Posts.author_id == Users.id).with_entities(
+        query = db.query(Posts).join(Users, Posts.author_id == Users.id).with_entities(
             Posts.id,
             Posts.title,
             Posts.tag,
@@ -40,10 +45,17 @@ def get_all_posts_partial(db: db_dependency,page_number: int = 1, page_size: int
             Posts.created_at,
             Users.id.label("author_id"),
             Users.username.label("author_username")
-        ).offset((page_number - 1) * page_size).limit(page_size).all()
-        total_posts = db.query(Posts).all()
+        )
+        if tag and tag.lower() != "all":
+            tag_list = [t.strip() for t in tag.split(",") if t.strip()]
+            tag_filters = [Posts.tag.ilike(f"%{t}%") for t in tag_list]
+            query = query.filter(or_(*tag_filters))
+        if author:
+            query = query.filter(Users.username.ilike(f"%{author}%"))
+        total_posts = query.count()
+        posts = query.offset((page_number - 1) * page_size).limit(page_size).all()
         result = []
-        for post in post_model:
+        for post in posts:
             content = post.content[:70] + "..." if len(post.content) > 70 else post.content
             result.append({
                 "id": post.id,
@@ -56,10 +68,9 @@ def get_all_posts_partial(db: db_dependency,page_number: int = 1, page_size: int
                     "username": post.author_username
                 }
             })
-        return {"result": result, "totalPosts": len(total_posts)} 
+        return {"result": result, "totalPosts": total_posts}
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
-    
 
 # get api to all info for a particular post
 @router.get("/{post_id}",status_code=status.HTTP_200_OK)
@@ -91,45 +102,6 @@ def get_post_detail(post_id:int,db: db_dependency):
         return res[0] if res else None
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
-
-# get api(filter api) for posts by tag and author username(LIKE)
-@router.get("/filter/{author}/{tag}",status_code=status.HTTP_200_OK)
-def filter_posts(db: db_dependency,user:user_dependency,tag:str,author:str):
-    if not user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
-    try:
-        query = db.query(Posts,Users.username).join(Users, Posts.author_id == Users.id)
-        if tag.lower() != "all":
-            tag_list = [tag.strip() for tag in tag.split(",") if tag.strip()]
-            print(tag_list)
-            tag_filters = [Posts.tag.ilike(f"%{t}%") for t in tag_list]
-            query = query.filter(or_(*tag_filters))
-        
-        query = query.filter(Users.username.ilike(f"%{author}%"))
-
-        records = query.all()
-        result = []
-        for post_model, author_username in records:
-              content = (
-                post_model.content[:70] + "..."
-                if len(post_model.content) > 70
-                else post_model.content
-            )
-              result.append({
-                    "id": post_model.id,
-                    "title": post_model.title,
-                    "content": content,
-                    "tag": post_model.tag,
-                    "created_at": post_model.created_at,
-                    "author": {
-                        "id": post_model.author_id,
-                        "username": author_username
-                    }
-                })
-        return result
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
-
 
 
 # get api for image 

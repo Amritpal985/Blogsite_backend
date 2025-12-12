@@ -1,7 +1,6 @@
 import boto3
 import json
 from datetime import datetime
-import os
 
 AWS_REGION = "us-east-1"
 LOG_GROUP = "FastAPI-App-Logs"
