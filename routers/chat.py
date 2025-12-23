@@ -5,7 +5,7 @@ from database import SessionLocal
 from typing import Annotated
 from services import auth_services
 from schemas import ChatRequest
-
+ 
 def get_db():
     db = SessionLocal()
     try:
